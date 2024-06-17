@@ -86,3 +86,34 @@ Running the Application
 
     Access Swagger UI
         Navigate to https://localhost:7071/swagger in your web browser to view and interact with the API endpoints
+
+
+NOTE!!!!!!!!!!
+
+        PLEASE NOTE DURING RUNNING THE APPLICATION YOU MIGHT ENCOUNTER ERROR 500 due to appsettings in refrence to email sending, kindly replace the below Appsettings which might have changed when you clone.
+
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "NewDatabase": "Data Source=SQL8006.site4now.net;Initial Catalog=db_aa9ff7_user1;User Id=db_aa9ff7_user1_admin;Password=Nisotgreg0"
+  },
+  "JWT": {
+    "ValidAudience": "http://localhost:44371",
+    "ValidIssuer": "https://localhost:44371",
+    "Secret": "JWTAuthenticationHIGHsecuredPasswordVVVp1OH7Xzyr"
+  },
+  "EmailSettings": {
+    "MailServer": "live.smtp.mailtrap.io",
+    "MailPort": 587,
+    "SenderName": "Codemunk Tech",
+    "SenderEmail": "mailtrap@demomailtrap.com",
+    "Username": "api",
+    "Password": "2a5270711f25d0ff0c03e346432f2945"
+  }
+}
