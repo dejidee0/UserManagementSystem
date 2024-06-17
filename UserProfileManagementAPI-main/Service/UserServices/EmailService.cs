@@ -13,13 +13,33 @@ public class EmailService : IEmailService
     public EmailService(IOptions<EmailSettings> emailSettings)
     {
         _emailSettings = emailSettings.Value;
+        if (string.IsNullOrEmpty(_emailSettings.SenderEmail))
+        {
+            throw new ArgumentException("Sender email address is required and cannot be empty.", nameof(_emailSettings.SenderEmail));
+        }
     }
 
     public async Task SendEmailAsync(string toEmail, string subject, string body)
     {
+        // Validate the toEmail parameter
+        if (string.IsNullOrEmpty(toEmail))
+        {
+            throw new ArgumentException("To email address is required and cannot be empty.", nameof(toEmail));
+        }
+
         var email = new MimeMessage();
         email.From.Add(new MailboxAddress(_emailSettings.SenderName, _emailSettings.SenderEmail));
-        email.To.Add(MailboxAddress.Parse(toEmail));
+
+        try
+        {
+            // Attempt to parse and add the recipient email address
+            email.To.Add(MailboxAddress.Parse(toEmail));
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException("Invalid to email address format.", nameof(toEmail), ex);
+        }
+
         email.Subject = subject;
         email.Body = new TextPart(TextFormat.Html) { Text = body };
 
