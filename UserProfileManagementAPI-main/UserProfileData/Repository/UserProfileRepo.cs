@@ -15,65 +15,68 @@ namespace UserProfileData.Repository
         private readonly UserManager<UserProfile> _userManager;
         private readonly IConfiguration _configuration;
         private readonly IMapper _mapper;
+
         public UserProfileRepo(UserManager<UserProfile> userManager, IConfiguration configuration, IMapper mapper)
         {
             _userManager = userManager;
             _configuration = configuration;
             _mapper = mapper;
         }
-        public async Task<ResponseDto<Object>> CreateUserProfile(UserProfile user, string Password)
+
+        public async Task<ResponseDto<object>> CreateUserProfile(UserProfile user, string password)
         {
-            var response = new ResponseDto<Object>();
-            var email = await _userManager.FindByEmailAsync(user.Email);
-            if(email != null)
+            var response = new ResponseDto<object>();
+            var existingUser = await _userManager.FindByEmailAsync(user.Email);
+            if (existingUser != null)
             {
                 response.Result = "Try using another email";
                 response.StatusCode = 400;
-                response.DisplayMessage = "email already exist";
+                response.DisplayMessage = "Email already exists";
                 return response;
             }
-            var UserToCreate = await _userManager.CreateAsync(user, Password);
-            var error = UserToCreate.Errors;
-            if(UserToCreate.Succeeded)
+
+            var result = await _userManager.CreateAsync(user, password);
+            if (result.Succeeded)
             {
-                response.Result = UserToCreate;
+                response.Result = result;
                 response.StatusCode = 200;
                 response.DisplayMessage = "Success";
                 return response;
             }
-            response.Result = error;
+
+            response.Result = result.Errors;
             response.StatusCode = 404;
-            response.DisplayMessage = "failed";
+            response.DisplayMessage = "Failed";
             return response;
         }
+
         public async Task<APIResponse> AuthenticateUser(LoginRequestDto loginModel)
         {
             var user = await _userManager.FindByNameAsync(loginModel.UserName);
-            if(user == null)
+            if (user == null)
             {
                 return new APIResponse
                 {
                     StatusCode = 404,
                     Message = "Invalid username or password."
                 };
-
             }
-            var verifiedUser = await _userManager.CheckPasswordAsync(user, loginModel.Password);
-            if(verifiedUser)
-            {
 
+            var verifiedUser = await _userManager.CheckPasswordAsync(user, loginModel.Password);
+            if (verifiedUser)
+            {
                 var authClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name,user.UserName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        };
+                {
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                };
 
                 var jwtToken = GetToken(authClaims);
 
                 return new APIResponse
                 {
                     StatusCode = 200,
-                    Message = "UserProfile Authenticated!",
+                    Message = "User authenticated!",
                     Token = new JwtSecurityTokenHandler().WriteToken(jwtToken),
                     Expiration = jwtToken.ValidTo
                 };
@@ -85,6 +88,7 @@ namespace UserProfileData.Repository
                 Message = "Invalid username or password."
             };
         }
+
         public JwtSecurityToken GetToken(List<Claim> authClaims)
         {
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
@@ -98,6 +102,7 @@ namespace UserProfileData.Repository
             );
             return token;
         }
+
         public async Task<ResponseDto<UserProfileUpdateDto>> GetLoggedInUserByToken(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -121,15 +126,16 @@ namespace UserProfileData.Repository
                 var claims = principal.Claims;
 
                 var userName = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-
                 var user = await _userManager.FindByNameAsync(userName);
-                if(user == null || userName == null)
+
+                if (user == null || userName == null)
                 {
                     response.StatusCode = 404;
-                    response.DisplayMessage = "Invalid token or UserName not found";
+                    response.DisplayMessage = "Invalid token or username not found";
                     response.Result = null;
                     return response;
                 }
+
                 var userResponse = _mapper.Map<UserProfileUpdateDto>(user);
 
                 response.StatusCode = 200;
@@ -137,7 +143,7 @@ namespace UserProfileData.Repository
                 response.Result = userResponse;
                 return response;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 response.StatusCode = 400;
                 response.DisplayMessage = ex.Message;
@@ -145,20 +151,23 @@ namespace UserProfileData.Repository
                 return response;
             }
         }
-        public async Task<ResponseDto<Object>> UpdateUser(string token, UserProfileUpdateDto updateUserDto)
+
+        public async Task<ResponseDto<object>> UpdateUser(string token, UserProfileUpdateDto updateUserDto)
         {
-            var response = new ResponseDto<Object>();
+            var response = new ResponseDto<object>();
             try
             {
                 var user = await GetLoggedInUserByToken(token);
                 var userDetails = await _userManager.FindByEmailAsync(user.Result.Email);
-                if(user == null)
+
+                if (user == null)
                 {
                     response.StatusCode = 402;
                     response.DisplayMessage = "User not found for the provided user ID.";
                     response.Result = null;
                     return response;
                 }
+
                 userDetails.Address = updateUserDto.Address;
                 userDetails.PhoneNumber = updateUserDto.PhoneNumber;
                 userDetails.PhoneNumberConfirmed = updateUserDto.PhoneNumberConfirmed;
@@ -167,21 +176,24 @@ namespace UserProfileData.Repository
                 userDetails.Age = updateUserDto.Age;
                 userDetails.City = updateUserDto.City;
                 userDetails.Email = updateUserDto.Email;
-                userDetails.maritalStatus = updateUserDto.maritalStatus;
+                //userDetails.MaritalStatus = updateUserDto.MaritalStatus;
+
                 var updateResult = await _userManager.UpdateAsync(userDetails);
                 var errors = updateResult.Errors;
-                if(!updateResult.Succeeded)
+
+                if (!updateResult.Succeeded)
                 {
                     response.StatusCode = 404;
                     response.Result = errors;
-                    response.DisplayMessage = "failed";
+                    response.DisplayMessage = "Failed";
                 }
+
                 response.StatusCode = 200;
                 response.DisplayMessage = $"{updateUserDto.UserName} information updated successfully.";
                 response.Result = updateResult;
                 return response;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 response.StatusCode = 500;
                 response.DisplayMessage = ex.Message;

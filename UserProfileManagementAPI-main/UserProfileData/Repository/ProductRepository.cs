@@ -16,6 +16,11 @@ namespace UserProfileData.Repository
             _context = context;
         }
 
+        public async Task<IEnumerable<Product>> GetAllProducts()
+        {
+            return await _context.Products.ToListAsync();
+        }
+
         public async Task<IEnumerable<Product>> GetProducts(int pageIndex, int pageSize, string category)
         {
             var query = _context.Products.AsQueryable();

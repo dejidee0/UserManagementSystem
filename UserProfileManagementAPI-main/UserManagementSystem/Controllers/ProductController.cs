@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using UserProfileData.Domain;
 using UserProfileData.Repository;
 
@@ -15,7 +16,16 @@ namespace UserManagementSystemAPI.Controllers
             _productRepository = productRepository;
         }
 
+        [HttpGet("all")]
+        [Authorize]
+        public async Task<IActionResult> GetAllProducts()
+        {
+            var products = await _productRepository.GetAllProducts();
+            return Ok(products);
+        }
+
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetProducts(int pageIndex = 1, int pageSize = 10, string category = null)
         {
             var products = await _productRepository.GetProducts(pageIndex, pageSize, category);
@@ -23,6 +33,7 @@ namespace UserManagementSystemAPI.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<IActionResult> GetProductById(int id)
         {
             var product = await _productRepository.GetProductById(id);
@@ -31,6 +42,7 @@ namespace UserManagementSystemAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateProduct(Product product)
         {
             var createdProduct = await _productRepository.CreateProduct(product);
@@ -38,6 +50,7 @@ namespace UserManagementSystemAPI.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> UpdateProduct(int id, Product product)
         {
             if (id != product.Id) return BadRequest();
@@ -46,6 +59,7 @@ namespace UserManagementSystemAPI.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var result = await _productRepository.DeleteProduct(id);

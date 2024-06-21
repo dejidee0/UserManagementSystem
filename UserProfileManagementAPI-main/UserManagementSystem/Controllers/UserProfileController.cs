@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Service.UserServices;
 using UserProfileData.DTO;
 using UserProfileServices.UserServices;
@@ -10,15 +11,16 @@ namespace UserManagementSystemAPI.Controllers
     public class UserProfileController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IEmailService _emailService; 
+        private readonly IEmailService _emailService;
 
         public UserProfileController(IUserService userService, IEmailService emailService)
         {
             _userService = userService;
-            _emailService = emailService; 
+            _emailService = emailService;
         }
 
         [HttpPost("create/user")]
+        [AllowAnonymous]
         public async Task<IActionResult> CreateUserProfile(UserProfileDto userProfile)
         {
             if (ModelState.IsValid)
@@ -40,13 +42,13 @@ namespace UserManagementSystemAPI.Controllers
         }
 
         [HttpPost("authenticate/user")]
-
+        [AllowAnonymous]
         public async Task<IActionResult> AuthenticateUser(LoginRequestDto userProfile)
         {
-            if(ModelState.IsValid)
+            if (ModelState.IsValid)
             {
                 var createUser = await _userService.AuthenticateUser(userProfile);
-                if(createUser.StatusCode == 200)
+                if (createUser.StatusCode == 200)
                 {
                     return Ok(createUser);
                 }
@@ -54,14 +56,15 @@ namespace UserManagementSystemAPI.Controllers
             }
             return BadRequest(userProfile);
         }
+
         [HttpGet("user/profile")]
+        [Authorize]
         public async Task<IActionResult> GetUserProfile(string token)
         {
-            if(ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-
                 var userProfile = await _userService.GetUserProfile(token);
-                if(userProfile.StatusCode == 200)
+                if (userProfile.StatusCode == 200)
                 {
                     return Ok(userProfile);
                 }
@@ -69,13 +72,15 @@ namespace UserManagementSystemAPI.Controllers
             }
             return BadRequest(token);
         }
+
         [HttpPut("update/user/profile")]
+        [Authorize]
         public async Task<IActionResult> UpdateUserProfile(string token, UserProfileUpdateDto userProfileUpdateDto)
         {
-            if(ModelState.IsValid)
+            if (ModelState.IsValid)
             {
                 var userProfile = await _userService.UpdateUserProfile(token, userProfileUpdateDto);
-                if(userProfile.StatusCode == 200)
+                if (userProfile.StatusCode == 200)
                 {
                     return Ok(userProfile);
                 }
